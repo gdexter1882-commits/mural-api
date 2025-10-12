@@ -8,6 +8,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 CSV_PATH = "mural_master.csv"
+REQUIRED_COLUMNS = {"Handle", "Width", "Height", "Pages", "Margin"}
 
 # Diagnostic print to confirm CSV path and existence
 csv_abs_path = os.path.abspath(CSV_PATH)
@@ -19,6 +20,12 @@ if not os.path.exists(CSV_PATH):
 else:
     print("✅ mural_master.csv found — loading now.", flush=True)
     df = pd.read_csv(CSV_PATH)
+    print(f"📊 Columns in CSV: {list(df.columns)}", flush=True)
+
+    missing = REQUIRED_COLUMNS - set(df.columns)
+    if missing:
+        print(f"❌ Missing required columns: {missing}", flush=True)
+        df = pd.DataFrame()  # prevent layout loop from running
 
 @app.route("/api/murals", methods=["POST"])
 def get_murals():
@@ -31,6 +38,10 @@ def get_murals():
     if wall_width is None or wall_height is None:
         print("❌ Missing wall dimensions", flush=True)
         return jsonify({"error": "Missing wall dimensions"}), 400
+
+    if df.empty:
+        print("❌ mural_master.csv is not loaded or missing required columns", flush=True)
+        return jsonify({"error": "CSV not loaded or missing required columns"}), 500
 
     eligible = []
 
