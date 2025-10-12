@@ -1,22 +1,50 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from eligible_texts import get_eligible_texts
+import pandas as pd
+import os
+from try_layout import try_layout
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-@app.route("/api/murals", methods=["GET", "POST"])
+CSV_PATH = "mural_master.csv"
+
+print(f"📄 Attempting to read CSV from: {os.path.abspath(CSV_PATH)}", flush=True)
+if not os.path.exists(CSV_PATH):
+    print("❌ mural_master.csv not found — check repo and deployment path.", flush=True)
+else:
+    print("✅ mural_master.csv found — loading now.", flush=True)
+
+df = pd.read_csv(CSV_PATH)
+
+@app.route("/api/murals", methods=["POST"])
 def get_murals():
-    if request.method == "POST":
-        data = request.get_json()
-        wall_width = data.get("wall_width") or data.get("width")
-        wall_height = data.get("wall_height") or data.get("height")
-    else:
-        wall_width = request.args.get("wall_width", type=float) or request.args.get("width", type=float)
-        wall_height = request.args.get("wall_height", type=float) or request.args.get("height", type=float)
+    data = request.get_json()
+    wall_width = data.get("wall_width")
+    wall_height = data.get("wall_height")
 
-    if wall_width is None or wall_height is None:
-        return jsonify({"error": "Missing wall dimensions"}), 400
+    eligible = []
 
-    eligible = get_eligible_texts(wall_width, wall_height)
-    return jsonify(eligible)
+    for _, row in df.iterrows():
+        result = try_layout(
+            wall_width,
+            wall_height,
+            row["Width"],
+            row["Height"],
+            row["Pages"],
+            row["Margin"]
+        )
+        if result["eligible"]:
+            eligible.append({
+                "handle": row["Handle"],
+                "layout": result["layout"],
+                "scale": result["scale"],
+                "pages": row["Pages"],
+                "margin": row["Margin"]
+            })
+
+    return jsonify({"eligible": eligible})
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
