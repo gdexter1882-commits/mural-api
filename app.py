@@ -1,51 +1,26 @@
-from flask import Flask, request, jsonify
-import pandas as pd
-from try_layout import try_layout
 import os
-import sys
+import csv
+from flask import Flask, jsonify
+from generate_layout_preview import generate_preview
 
 app = Flask(__name__)
 
-# Define the path to your CSV
-CSV_PATH = "mural_master.csv"
+CSV_PATH = r"D:\csv\mural_master.csv"
 
-# Diagnostic print to confirm CSV path and existence
-print(f"📄 Attempting to read CSV from: {os.path.abspath(CSV_PATH)}", flush=True)
-if not os.path.exists(CSV_PATH):
-    print("❌ mural_master.csv not found — check repo and deployment path.", flush=True)
-else:
-    print("✅ mural_master.csv found — loading now.", flush=True)
+@app.route("/")
+def index():
+    return "✅ Flask is running"
 
-# Load the mural data
-df = pd.read_csv(CSV_PATH)
+@app.route("/api/murals")
+def generate_all_previews():
+    with open(CSV_PATH, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        handles = [row["Handle"].strip() for row in reader]
 
-@app.route("/api/murals", methods=["POST"])
-def get_murals():
-    data = request.get_json()
-    wall_width = data.get("wall_width")
-    wall_height = data.get("wall_height")
+    for handle in handles:
+        generate_preview(handle)
 
-    eligible = []
-
-    for _, row in df.iterrows():
-        result = try_layout(
-            wall_width,
-            wall_height,
-            row["Width"],
-            row["Height"],
-            row["Pages"],
-            row["Margin"]
-        )
-        if result["eligible"]:
-            eligible.append({
-                "handle": row["Handle"],
-                "layout": result["layout"],
-                "scale": result["scale"],
-                "pages": row["Pages"],
-                "margin": row["Margin"]
-            })
-
-    return jsonify({"eligible": eligible})
+    return jsonify({"status": "Previews generated", "count": len(handles)})
 
 if __name__ == "__main__":
     app.run(debug=True)
