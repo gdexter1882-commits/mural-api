@@ -1,14 +1,19 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 from try_layout import try_layout
+import os
 
 app = Flask(__name__)
 
 # Define the path to your CSV
 CSV_PATH = "mural_master.csv"
 
-# Diagnostic print to confirm CSV path
-print(f"📄 Reading CSV from: {CSV_PATH}")
+# Diagnostic print to confirm CSV path and existence
+print(f"📄 Attempting to read CSV from: {os.path.abspath(CSV_PATH)}")
+if not os.path.exists(CSV_PATH):
+    print("❌ mural_master.csv not found — check repo and deployment path.")
+else:
+    print("✅ mural_master.csv found — loading now.")
 
 # Load the mural data
 df = pd.read_csv(CSV_PATH)
