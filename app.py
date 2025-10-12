@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 CSV_PATH = "mural_master.csv"
-REQUIRED_COLUMNS = {"Handle", "Width", "Height", "Pages", "Margin"}
+REQUIRED_COLUMNS = {"Handle", "Pages", "Page Height (cm)", "Page Width (cm)"}
 
 # Diagnostic print to confirm CSV path and existence
 csv_abs_path = os.path.abspath(CSV_PATH)
@@ -50,10 +50,10 @@ def get_murals():
             result = try_layout(
                 wall_width,
                 wall_height,
-                row["Width"],
-                row["Height"],
+                row["Page Width (cm)"],
+                row["Page Height (cm)"],
                 row["Pages"],
-                row["Margin"]
+                row.get("Margin", 0)  # fallback if Margin is missing
             )
             if result["eligible"]:
                 eligible.append({
@@ -61,7 +61,7 @@ def get_murals():
                     "layout": result["layout"],
                     "scale": result["scale"],
                     "pages": row["Pages"],
-                    "margin": row["Margin"]
+                    "margin": row.get("Margin", 0)
                 })
         except Exception as e:
             print(f"⚠️ Layout error for {row.get('Handle', 'UNKNOWN')}: {e}", flush=True)
