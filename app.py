@@ -1,3 +1,10 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from eligible_texts import get_eligible_texts
+
+app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
 @app.route("/api/murals", methods=["GET", "POST"])
 def get_murals():
     if request.method == "POST":
