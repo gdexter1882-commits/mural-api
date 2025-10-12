@@ -25,7 +25,7 @@ else:
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
         print(f"❌ Missing required columns: {missing}", flush=True)
-        df = pd.DataFrame()  # prevent layout loop from running
+        df = pd.DataFrame()
 
 @app.route("/api/murals", methods=["POST"])
 def get_murals():
@@ -45,26 +45,36 @@ def get_murals():
 
     eligible = []
 
-    for _, row in df.iterrows():
+    for i, row in df.iterrows():
         try:
+            print(f"🔍 Row {i}: {row.to_dict()}", flush=True)
+
+            handle = str(row.get("Handle", "")).strip()
+            pages = int(float(row.get("Pages", 0)))
+            height = float(row.get("Page Height (cm)", 0))
+            width = float(row.get("Page Width (cm)", 0))
+            margin = float(row.get("Margin", 0)) if "Margin" in row else 0
+
             result = try_layout(
                 wall_width,
                 wall_height,
-                row["Page Width (cm)"],
-                row["Page Height (cm)"],
-                row["Pages"],
-                row.get("Margin", 0)  # fallback if Margin is missing
+                width,
+                height,
+                pages,
+                margin
             )
-            if result["eligible"]:
+            print(f"📐 Layout result for {handle}: {result}", flush=True)
+
+            if result.get("eligible"):
                 eligible.append({
-                    "handle": row["Handle"],
+                    "handle": handle,
                     "layout": result["layout"],
                     "scale": result["scale"],
-                    "pages": row["Pages"],
-                    "margin": row.get("Margin", 0)
+                    "pages": pages,
+                    "margin": margin
                 })
         except Exception as e:
-            print(f"⚠️ Layout error for {row.get('Handle', 'UNKNOWN')}: {e}", flush=True)
+            print(f"⚠️ Error in row {i} ({row.get('Handle', 'UNKNOWN')}): {e}", flush=True)
 
     print(f"✅ Returning {len(eligible)} eligible murals", flush=True)
     return jsonify({"eligible": eligible})
