@@ -1,4 +1,4 @@
-def try_layout(wall_w, wall_h, page_w, page_h, pages):
+def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
     """
     Determine if a mural layout fits within the given wall dimensions.
     Returns layout metadata if it fits.
@@ -8,9 +8,9 @@ def try_layout(wall_w, wall_h, page_w, page_h, pages):
     - Page scaling between 95% and 105%
     """
 
-    for margin in range(5, 16):  # test margins from 5 to 15 cm
-        usable_w = wall_w - 2 * margin
-        usable_h = wall_h - 2 * margin
+    for margin_test in range(5, 16):  # test margins from 5 to 15 cm
+        usable_w = wall_w - 2 * margin_test
+        usable_h = wall_h - 2 * margin_test
 
         best = None
         for cols in range(1, pages + 1):
@@ -43,6 +43,7 @@ def try_layout(wall_w, wall_h, page_w, page_h, pages):
                 }
 
         if best:
+            best["eligible"] = True
             return best
 
-    return {"fit": False}
+    return {"eligible": False}
