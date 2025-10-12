@@ -1,11 +1,11 @@
 def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
     """
-    Determine if a mural layout fits within the given wall dimensions.
-    Returns layout metadata if it fits.
+    Returns layout metadata if the mural fits within the wall dimensions.
     Enforces:
-    - Margin between 5cm and 15cm
-    - Row gap between 1cm and 5cm
-    - Page scaling between 95% and 105%
+    - Margin between 5–15 cm
+    - Page scaling between 95–105%
+    - Row gap between 1–5 cm
+    - Rejects sparse layouts that inflate grid size
     """
 
     for margin_test in range(5, 16):  # test margins from 5 to 15 cm
@@ -32,13 +32,17 @@ def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
                 if not (1 <= row_gap <= 5):
                     continue
 
+                # ✅ Reject sparse layouts (e.g. 15x1 or 1x15)
+                if cols == 1 or rows == 1:
+                    continue
+
                 best = {
                     "fit": True,
                     "grid": f"{cols}x{rows}",
                     "scale_pct": scale_pct,
                     "row_gap": row_gap,
-                    "margin_x": 0,
-                    "margin_y": 0,
+                    "margin_x": margin_test,
+                    "margin_y": margin_test,
                     "text_centered": True
                 }
 
