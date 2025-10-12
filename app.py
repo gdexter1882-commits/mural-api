@@ -1,10 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from eligible_texts import get_eligible_texts
-
-app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
 @app.route("/api/murals", methods=["GET", "POST"])
 def get_murals():
     if request.method == "POST":
@@ -19,6 +12,4 @@ def get_murals():
         return jsonify({"error": "Missing wall dimensions"}), 400
 
     eligible = get_eligible_texts(wall_width, wall_height)
-
-    # Format for Shopify: list of {title: "..."}
-    return jsonify([{"title": text} for text in eligible])
+    return jsonify(eligible)
