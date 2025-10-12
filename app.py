@@ -1,12 +1,8 @@
-import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 from try_layout import try_layout
-
-# Force Flask to bind correctly even if launched via flask run
-os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
-os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -27,32 +23,37 @@ else:
 @app.route("/api/murals", methods=["POST"])
 def get_murals():
     data = request.get_json()
+    print(f"📥 Received request: {data}", flush=True)
+
     wall_width = data.get("wall_width")
     wall_height = data.get("wall_height")
+
+    if wall_width is None or wall_height is None:
+        print("❌ Missing wall dimensions", flush=True)
+        return jsonify({"error": "Missing wall dimensions"}), 400
 
     eligible = []
 
     for _, row in df.iterrows():
-        result = try_layout(
-            wall_width,
-            wall_height,
-            row["Width"],
-            row["Height"],
-            row["Pages"],
-            row["Margin"]
-        )
-        if result["eligible"]:
-            eligible.append({
-                "handle": row["Handle"],
-                "layout": result["layout"],
-                "scale": result["scale"],
-                "pages": row["Pages"],
-                "margin": row["Margin"]
-            })
+        try:
+            result = try_layout(
+                wall_width,
+                wall_height,
+                row["Width"],
+                row["Height"],
+                row["Pages"],
+                row["Margin"]
+            )
+            if result["eligible"]:
+                eligible.append({
+                    "handle": row["Handle"],
+                    "layout": result["layout"],
+                    "scale": result["scale"],
+                    "pages": row["Pages"],
+                    "margin": row["Margin"]
+                })
+        except Exception as e:
+            print(f"⚠️ Layout error for {row.get('Handle', 'UNKNOWN')}: {e}", flush=True)
 
+    print(f"✅ Returning {len(eligible)} eligible murals", flush=True)
     return jsonify({"eligible": eligible})
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"🚀 Starting Flask on 0.0.0.0:{port}", flush=True)
-    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
