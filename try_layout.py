@@ -5,7 +5,7 @@ def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
     - Margin between 5–15 cm
     - Page scaling between 95–105%
     - Row gap between 1–5 cm
-    - Rejects sparse layouts that inflate grid size
+    - Rejects sparse or unbalanced layouts
     """
 
     for margin_test in range(5, 16):  # test margins from 5 to 15 cm
@@ -23,17 +23,19 @@ def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
                 scale_h = usable_h / mural_h
                 scale_pct = int(min(scale_w, scale_h) * 100)
 
-                # ✅ Enforce scale between 95% and 105%
                 if not (95 <= scale_pct <= 105):
                     continue
 
-                # ✅ Enforce row gap between 1 and 5 cm
                 row_gap = 3
                 if not (1 <= row_gap <= 5):
                     continue
 
-                # ✅ Reject sparse layouts (e.g. 15x1 or 1x15)
+                # ✅ Reject sparse layouts
                 if cols == 1 or rows == 1:
+                    continue
+                if pages >= 12 and (cols < 3 or rows < 3):
+                    continue
+                if abs(cols - rows) > pages // 2:
                     continue
 
                 best = {
