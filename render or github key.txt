@@ -1,0 +1,5 @@
+read_products,write_products,read_product_listings,write_product_listings,write_files
+
+client ID f1406960c252c1b61adb92f0174752f4
+
+secret b3debe4b7d546bf98f624f631617d16a
