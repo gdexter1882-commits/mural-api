@@ -7,7 +7,8 @@ from eligible_texts import get_eligible_texts
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
-app = Flask(__name__)
+# ✅ Enable static file serving
+app = Flask(__name__, static_folder="static")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 @app.route("/api/murals", methods=["POST"])
