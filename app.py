@@ -7,19 +7,32 @@ from eligible_texts import get_eligible_texts
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
-# ✅ Enable static file serving
 app = Flask(__name__, static_folder="static")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+@app.route("/")
+def index():
+    return "Mural API is running", 200
+
+@app.route("/health")
+def health():
+    return "OK", 200
+
 @app.route("/api/murals", methods=["POST"])
 def get_murals():
-    data = request.get_json()
-    wall_width = float(data.get("wall_width", 0))
-    wall_height = float(data.get("wall_height", 0))
+    try:
+        data = request.get_json()
+        wall_width = float(data.get("wall_width", 0))
+        wall_height = float(data.get("wall_height", 0))
+        print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
-    eligible = get_eligible_texts(wall_width, wall_height)
+        eligible = get_eligible_texts(wall_width, wall_height)
+        print(f"✅ Returning {len(eligible)} eligible murals", flush=True)
 
-    return jsonify({"eligible": eligible})
+        return jsonify({"eligible": eligible})
+    except Exception as e:
+        print(f"❌ Error in /api/murals: {e}", flush=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
