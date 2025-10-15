@@ -27,9 +27,14 @@ def get_murals():
         print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
         eligible = get_eligible_texts(wall_width, wall_height)
-        print(f"✅ Returning {len(eligible)} eligible murals", flush=True)
 
-        return jsonify({"eligible": eligible})
+        # Deduplicate based on string identity
+        deduped = list({str(item): item for item in eligible}.values())
+        print(f"🧾 Eligible mural count: {len(deduped)}")
+        for i, mural in enumerate(deduped):
+            print(f"{i+1}. {mural}", flush=True)
+
+        return jsonify({"eligible": deduped})
     except Exception as e:
         print(f"❌ Error in /api/murals: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
