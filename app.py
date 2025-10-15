@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from eligible_texts import get_eligible_texts
 
-# Force Flask to bind correctly even if launched via flask run
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
@@ -28,7 +27,6 @@ def get_murals():
 
         eligible = get_eligible_texts(wall_width, wall_height)
 
-        # Deduplicate based on string identity
         deduped = list({str(item): item for item in eligible}.values())
         print(f"🧾 Eligible mural count: {len(deduped)}")
         for i, mural in enumerate(deduped):

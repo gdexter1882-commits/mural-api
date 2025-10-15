@@ -1,5 +1,16 @@
 import csv
 import os
+import re
+import unicodedata
+
+def slugify(text):
+    if not isinstance(text, str):
+        return ""
+    text = unicodedata.normalize("NFKD", text)
+    text = text.encode("ascii", "ignore").decode("ascii")
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[\s_-]+", "-", text)
+    return text.lower().strip("-")
 
 def try_layout(wall_w, wall_h, page_w, page_h, pages, margin=0):
     for margin_test in range(5, 16):  # test margins from 5 to 15 cm
@@ -55,6 +66,8 @@ def get_eligible_texts(wall_width, wall_height):
                     thumbnail_url = f"{base_url}/{handle}.jpg"
                     eligible.append({
                         "title": handle,
+                        "handle": handle,
+                        "slug": slugify(handle),
                         "grid": layout.get("grid"),
                         "scale": layout.get("scale_pct"),
                         "thumbnail": thumbnail_url
