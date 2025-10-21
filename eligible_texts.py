@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import unicodedata
+from try_layout import try_layout
 
 def slugify(text):
     if not isinstance(text, str):
@@ -32,16 +33,20 @@ def get_eligible_texts(wall_width, wall_height):
                         continue
 
                     aspect_ratio = round(width_cm / height_cm, 4)
-                    thumbnail_url = f"{base_url}/{handle}.jpg"
 
-                    eligible.append({
-                        "title": title,
-                        "handle": handle,
-                        "slug": slugify(handle),
-                        "thumbnail": thumbnail_url,
-                        "pages": pages,
-                        "aspect_ratio": aspect_ratio
-                    })
+                    layout = try_layout(wall_width, wall_height, width_cm, height_cm, pages)
+                    if layout.get("eligible"):
+                        thumbnail_url = f"{base_url}/{handle}.jpg"
+                        eligible.append({
+                            "title": title,
+                            "handle": handle,
+                            "slug": slugify(handle),
+                            "grid": layout.get("grid"),
+                            "scale": layout.get("scale_pct"),
+                            "thumbnail": thumbnail_url,
+                            "pages": pages,
+                            "aspect_ratio": aspect_ratio
+                        })
                 except Exception as e:
                     print(f"⚠️ Skipping row due to error: {e}", flush=True)
         print(f"📄 Reloaded mural_master.csv with {len(eligible)} eligible entries", flush=True)
