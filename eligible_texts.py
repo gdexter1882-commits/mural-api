@@ -38,7 +38,8 @@ def get_eligible_texts(wall_width, wall_height):
                             "slug": slugify(handle),
                             "grid": layout.get("grid"),
                             "scale": layout.get("scale_pct"),
-                            "thumbnail": thumbnail_url
+                            "thumbnail": thumbnail_url,
+                            "pages": pages  # ✅ Injected here
                         })
                 except Exception as e:
                     print(f"⚠️ Skipping row due to error: {e}", flush=True)
