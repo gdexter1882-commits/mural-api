@@ -2,9 +2,10 @@ import os
 import csv
 from PIL import Image
 
+# Paths
 CSV_PATH = "csv/mural_master.csv"
 STATIC_ROOT = "static/previews"
-TIFF_ROOT = "lowresfacsimiles"
+TIFF_ROOT = r"D:\csv\LowResFacsimiles"  # ✅ Raw string to avoid escape issues
 
 def find_tiff_folder(root, handle):
     for dirpath, dirnames, _ in os.walk(root):
@@ -18,13 +19,13 @@ def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
     best = None
     best_score = float("inf")
 
-    for scale in range(95, 106):
+    for scale in range(95, 106):  # 95% to 105%
         pw = page_w * scale / 100
         ph = page_h * scale / 100
 
         for cols in range(1, pages + 1):
             rows = (pages + cols - 1) // cols
-            for gap in range(1, 6):
+            for gap in range(1, 6):  # 1–5 cm
                 grid_w = cols * pw
                 grid_h = rows * ph + (rows - 1) * gap
 
@@ -56,7 +57,7 @@ def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
 
 def draw_grid(handle, layout, output_dir, pages):
     cols, rows = map(int, layout["grid"].split("x"))
-    pw = int(layout["page_w"] * 10)
+    pw = int(layout["page_w"] * 10)  # cm → pixels
     ph = int(layout["page_h"] * 10)
     margin_x = int(layout["margin_x"] * 10)
     margin_y = int(layout["margin_y"] * 10)
