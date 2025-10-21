@@ -3,7 +3,7 @@ import csv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from eligible_texts import get_eligible_texts
-from grid_core import slugify, select_best_layout, draw_grid
+from grid_core import slugify
 
 # Paths
 BASE_DIR = os.path.dirname(__file__)
@@ -50,52 +50,33 @@ def grid_preview():
     try:
         data = request.get_json()
         handle = data.get("handle")
-        wall_w = float(data.get("wall_width", 0))
-        wall_h = float(data.get("wall_height", 0))
+        wall_w = int(data.get("wall_width", 0))
+        wall_h = int(data.get("wall_height", 0))
 
         print(f"🔍 Looking up handle: {handle}", flush=True)
         print(f"📐 Wall dimensions: {wall_w} x {wall_h}", flush=True)
 
-        # Lookup mural metadata from CSV
-        with open(CSV_PATH, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            row = next((r for r in reader if r["Handle"].strip().lower() == handle.strip().lower()), None)
+        # Locate layout report
+        report_path = os.path.join(STATIC_ROOT, f"{wall_w}x{wall_h}", "layout_report.csv")
+        if not os.path.exists(report_path):
+            print(f"⚠️ Missing layout report: {report_path}", flush=True)
+            return jsonify({"error": "Layout report not found"}), 404
 
-        print(f"📄 CSV row: {row}", flush=True)
+        # Read layout report
+        with open(report_path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            row = next((r for r in reader if r["Handle"].strip().lower() == handle.strip().lower() and r["Fit"].strip().lower() == "yes"), None)
 
         if not row:
-            return jsonify({"error": "Mural not found"}), 404
+            print(f"⚠️ No valid layout found for: {handle}", flush=True)
+            return jsonify({"error": "No valid layout found"}), 404
 
-        try:
-            pages = int(row["Pages"])
-            raw_page_w = float(row["Page Width (cm)"])
-            raw_page_h = float(row["Page Height (cm)"])
-            scale_factor = 0.2  # shrink preview to 20% of original size
-            page_w = raw_page_w * scale_factor
-            page_h = raw_page_h * scale_factor
-        except:
-            return jsonify({"error": "Invalid mural data"}), 400
-
-        layout = select_best_layout(wall_w, wall_h, page_w, page_h, pages)
-        print(f"📊 Layout: {layout}", flush=True)
-
-        if not layout.get("fit"):
-            return jsonify({"error": layout["reason"]}), 400
-
-        output_dir = os.path.join(STATIC_ROOT, f"{int(wall_w)}x{int(wall_h)}")
-        os.makedirs(output_dir, exist_ok=True)
-        print(f"🖼️ Output dir: {output_dir}", flush=True)
-
-        out_path = draw_grid(handle, layout, output_dir, pages)
-        print(f"📁 Grid path: {out_path}", flush=True)
-
-        if not out_path:
-            return jsonify({"error": "Grid rendering failed"}), 500
-
-        filename = os.path.basename(out_path)
+        # Build image path
         slug = slugify(handle)
-        grid_url = f"https://mural-api.onrender.com/static/previews/{int(wall_w)}x{int(wall_h)}/{filename}"
+        filename = f"{slug}_grid.png"
+        grid_url = f"https://mural-api.onrender.com/static/previews/{wall_w}x{wall_h}/{filename}"
 
+        print(f"🖼️ Grid preview URL: {grid_url}", flush=True)
         return jsonify({"grid_url": grid_url})
     except Exception as e:
         print(f"❌ Error in /api/grid-preview: {e}", flush=True)
