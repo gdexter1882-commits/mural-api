@@ -6,8 +6,9 @@ from eligible_texts import get_eligible_texts
 from grid_core import slugify, select_best_layout, draw_grid
 
 # Paths
-CSV_PATH = r"D:\csv\mural_master.csv"
-STATIC_ROOT = r"D:\static\previews"
+BASE_DIR = os.path.dirname(__file__)
+CSV_PATH = os.path.join(BASE_DIR, "mural_master.csv")
+STATIC_ROOT = os.path.join(BASE_DIR, "static", "previews")
 
 # Flask setup
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
@@ -52,10 +53,15 @@ def grid_preview():
         wall_w = float(data.get("wall_width", 0))
         wall_h = float(data.get("wall_height", 0))
 
+        print(f"🔍 Looking up handle: {handle}", flush=True)
+        print(f"📐 Wall dimensions: {wall_w} x {wall_h}", flush=True)
+
         # Lookup mural metadata from CSV
         with open(CSV_PATH, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             row = next((r for r in reader if r["Handle"].strip().lower() == handle.strip().lower()), None)
+
+        print(f"📄 CSV row: {row}", flush=True)
 
         if not row:
             return jsonify({"error": "Mural not found"}), 404
@@ -71,13 +77,18 @@ def grid_preview():
             return jsonify({"error": "Invalid mural data"}), 400
 
         layout = select_best_layout(wall_w, wall_h, page_w, page_h, pages)
+        print(f"📊 Layout: {layout}", flush=True)
+
         if not layout.get("fit"):
             return jsonify({"error": layout["reason"]}), 400
 
         output_dir = os.path.join(STATIC_ROOT, f"{int(wall_w)}x{int(wall_h)}")
         os.makedirs(output_dir, exist_ok=True)
+        print(f"🖼️ Output dir: {output_dir}", flush=True)
 
         out_path = draw_grid(handle, layout, output_dir, pages)
+        print(f"📁 Grid path: {out_path}", flush=True)
+
         if not out_path:
             return jsonify({"error": "Grid rendering failed"}), 500
 
