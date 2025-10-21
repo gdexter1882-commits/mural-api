@@ -8,7 +8,7 @@ from grid_core import slugify
 # Paths
 BASE_DIR = os.path.dirname(__file__)
 CSV_PATH = os.path.join(BASE_DIR, "mural_master.csv")
-STATIC_ROOT = os.path.join(BASE_DIR, "static", "previews")
+STATIC_ROOT = os.path.join(BASE_DIR, "csv")
 
 # Flask setup
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
