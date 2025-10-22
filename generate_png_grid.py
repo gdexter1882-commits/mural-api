@@ -2,11 +2,10 @@ import os
 import csv
 from PIL import Image
 
-# Base directory for relative paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_PATH = os.path.join(BASE_DIR, "mural_master.csv")
-STATIC_ROOT = os.path.join(BASE_DIR, "static", "previews")
-TIFF_ROOT = os.path.join(BASE_DIR, "LowResFacsimiles")  # relative path now
+# Paths
+CSV_PATH = "csv/mural_master.csv"
+STATIC_ROOT = "static/previews"
+TIFF_ROOT = r"D:\csv\LowResFacsimiles"  # ✅ Raw string to avoid escape issues
 
 def find_tiff_folder(root, handle):
     for dirpath, dirnames, _ in os.walk(root):
@@ -101,9 +100,6 @@ def draw_grid(handle, layout, output_dir, pages):
     return out_path
 
 def generate_png_grid(handle, wall_w, wall_h):
-    """
-    Returns the path to the generated grid PNG for a given handle.
-    """
     with open(CSV_PATH, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -123,14 +119,3 @@ def generate_png_grid(handle, wall_w, wall_h):
                     return None
     print(f"❌ Handle not found in CSV: {handle}")
     return None
-
-# Optional command-line test
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) == 4:
-        handle = sys.argv[1]
-        wall_w = float(sys.argv[2])
-        wall_h = float(sys.argv[3])
-        generate_png_grid(handle, wall_w, wall_h)
-    else:
-        print("Usage: python generate_png_grid.py <handle> <wall_width_cm> <wall_height_cm>")
