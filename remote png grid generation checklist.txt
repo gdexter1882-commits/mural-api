@@ -1,0 +1,57 @@
+Great — now that you're ready, here’s your checklist to test the full remote grid generation flow:
+
+---
+
+## ✅ Deployment Checklist
+
+1. **Confirm `generate_png_grid.py` is deployed**
+   - Located in your backend repo
+   - Uses `lowresfacsimiles/` and `static/previews/`
+   - Callable via `generate_png_grid(handle, wall_w, wall_h)`
+
+2. **Ensure `lowresfacsimiles/` is present**
+   - Contains folders matching each mural handle
+   - Each folder has `Page_001.tif`, `Page_002.tif`, etc.
+
+3. **Confirm `static/previews/` is served publicly**
+   - Flask’s `static_folder="static"` is active
+   - PNGs saved to `static/previews/` are reachable via URL
+
+4. **Deploy updated `app.py`**
+   - Includes `/api/accurate-grid` route
+   - Calls `generate_png_grid()` and returns `grid_url`
+
+---
+
+## 🧪 Test It
+
+Send a POST request to:
+
+```
+https://mural-api.onrender.com/api/accurate-grid
+```
+
+With JSON body:
+
+```json
+{
+  "handle": "Dickens, Charles, Four Stories, Captain Boldheart...",
+  "wall_width": 100,
+  "wall_height": 100
+}
+```
+
+Expected response:
+
+```json
+{
+  "grid_url": "https://mural-api.onrender.com/static/previews/dickens-charles-four-stories-captain-boldheart_grid.png"
+}
+```
+
+Open that URL in your browser — it should show the accurate grid PNG rendered from the `.tif` files.
+
+---
+
+Let me know what happens when you run this test — I’ll help troubleshoot instantly if anything’s off.
+ 

@@ -1,16 +1,10 @@
 import os
-import csv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from eligible_texts import get_eligible_texts
-from grid_core import slugify
+from generate_png_grid import generate_png_grid
+from grid_core import slugify  # still used for slugs
 
-# Paths
-BASE_DIR = os.path.dirname(__file__)
-CSV_PATH = os.path.join(BASE_DIR, "mural_master.csv")
-STATIC_ROOT = os.path.join(BASE_DIR, "csv")
-
-# Flask setup
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
@@ -34,8 +28,8 @@ def get_murals():
         print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
         eligible = get_eligible_texts(wall_width, wall_height)
-
         deduped = list({str(item): item for item in eligible}.values())
+
         print(f"🧾 Eligible mural count: {len(deduped)}")
         for i, mural in enumerate(deduped):
             print(f"{i+1}. {mural}", flush=True)
@@ -45,41 +39,23 @@ def get_murals():
         print(f"❌ Error in /api/murals: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
 
-@app.route("/api/grid-preview", methods=["POST"])
-def grid_preview():
+@app.route("/api/accurate-grid", methods=["POST"])
+def accurate_grid():
     try:
         data = request.get_json()
         handle = data.get("handle")
-        wall_w = int(data.get("wall_width", 0))
-        wall_h = int(data.get("wall_height", 0))
+        wall_w = float(data.get("wall_width"))
+        wall_h = float(data.get("wall_height"))
 
-        print(f"🔍 Looking up handle: {handle}", flush=True)
-        print(f"📐 Wall dimensions: {wall_w} x {wall_h}", flush=True)
-
-        # Locate layout report
-        report_path = os.path.join(STATIC_ROOT, f"{wall_w}x{wall_h}", "layout_report.csv")
-        if not os.path.exists(report_path):
-            print(f"⚠️ Missing layout report: {report_path}", flush=True)
-            return jsonify({"error": "Layout report not found"}), 404
-
-        # Read layout report
-        with open(report_path, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            row = next((r for r in reader if r["Handle"].strip().lower() == handle.strip().lower() and r["Fit"].strip().lower() == "yes"), None)
-
-        if not row:
-            print(f"⚠️ No valid layout found for: {handle}", flush=True)
-            return jsonify({"error": "No valid layout found"}), 404
-
-        # Build image path
-        slug = slugify(handle)
-        filename = f"{slug}_grid.png"
-        grid_url = f"https://mural-api.onrender.com/static/previews/{wall_w}x{wall_h}/{filename}"
-
-        print(f"🖼️ Grid preview URL: {grid_url}", flush=True)
-        return jsonify({"grid_url": grid_url})
+        out_path = generate_png_grid(handle, wall_w, wall_h)
+        if out_path:
+            slug = slugify(handle)
+            grid_url = f"https://mural-api.onrender.com/static/previews/{slug}_grid.png"
+            return jsonify({"grid_url": grid_url})
+        else:
+            return jsonify({"error": "Grid generation failed"}), 500
     except Exception as e:
-        print(f"❌ Error in /api/grid-preview: {e}", flush=True)
+        print(f"❌ Error in /api/accurate-grid: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":

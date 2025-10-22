@@ -1,0 +1,85 @@
+Here’s your updated **upload pipeline**, Gary — now with integrated thumbnail deduplication. This version ensures that every new facsimile folder is processed cleanly, with no orphaned or duplicate thumbnails lingering in `static/thumbnails/firstpage`.
+
+---
+
+# ✅ Updated Mural Upload Pipeline (with Deduplication)
+
+### 📁 Step 1: Place Source Folder
+- [ ] Drop new folder into `D:\NormalizedModeFacsimiles\<Title, Author, Year, ID>\`
+- [ ] Confirm it contains `Page_001.tif` and all facsimile pages
+
+---
+
+### 🧪 Step 2: Slugify and Map First Page
+- [ ] Run `slug_to_image_map.py` to generate `slug_to_image_map.json`
+- [ ] Confirm each slug maps to its `Page_001.tif` path
+
+---
+
+### 🖼️ Step 3: Convert First Page to High-Res `.jpg`
+- [ ] Use Pillow to convert `.tif` to `.jpg` in `D:\csv\converted_images\<slug>.jpg`
+- [ ] Set DPI to 600 (optional metadata)
+- [ ] Confirm pixel dimensions ≥ 2000×3000
+
+---
+
+### 🧵 Step 4: Generate Low-Res Thumbnail
+- [ ] Resize `.jpg` to 250 DPI or target dimensions
+- [ ] Save to `D:\csv\static\thumbnails\firstpage\<slug>.jpg`
+
+---
+
+### 🧯 Step 5: Deduplicate Thumbnails
+- [ ] Run thumbnail deduplication script:
+  - Validates slugs against `mural_master.csv`
+  - Detects duplicate images by content hash
+  - Flags orphaned thumbnails
+  - Logs duplicates for review or auto-removal
+
+```python
+# Run this after thumbnail generation
+deduplicate_thumbnails()
+```
+
+---
+
+### 📦 Step 6: Copy to Low-Res Archive
+- [ ] Optionally copy `.jpg` to `D:\LowResFacsimiles\<slug>.jpg`
+
+---
+
+### 📊 Step 7: Update `mural_master.csv`
+- [ ] Add new row with:
+  - Handle (full title)
+  - Page count
+  - Page width and height in cm
+
+---
+
+### 🚀 Step 8: Push to GitHub
+- [ ] Commit changes to:
+  - `mural_master.csv`
+  - Thumbnail assets (if tracked)
+  - Deduplication logic (optional)
+- [ ] Push to GitHub repo
+
+---
+
+### 🌐 Step 9: Deploy to Render
+- [ ] Confirm Render pulls latest GitHub commit
+- [ ] Validate:
+  - `/api/murals` returns new entry
+  - Thumbnail is accessible
+  - Layout logic applies correctly
+
+---
+
+### 🛍️ Step 10: Upload to Shopify
+- [ ] Run enhanced upload script:
+  - Deletes low-res images (width < 2000, height < 3000)
+  - Uploads high-res `.jpg` as featured image
+- [ ] Confirm image appears on product page
+- [ ] Validate zoom and clarity
+
+---
+

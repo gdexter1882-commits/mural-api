@@ -1,0 +1,4 @@
+Invoke-RestMethod -Uri "https://mural-api.onrender.com/api/murals" `
+  -Method POST `
+  -Body '{"wall_width": 300, "wall_height": 200}' `
+  -ContentType "application/json"
