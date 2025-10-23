@@ -4,13 +4,18 @@ from PIL import Image
 
 CSV_PATH = "mural_master.csv"
 STATIC_ROOT = "static/previews"
-TIFF_ROOT = "LowResFacsimiles"
+TIFF_ROOT = "MediumResFacsimiles"
 
 def find_tiff_folder(root, handle):
+    print(f"📁 Searching for TIFF folder matching: {handle}")
     for dirpath, dirnames, _ in os.walk(root):
         for dirname in dirnames:
+            print(f"🔍 Checking folder: {dirname}")
             if dirname.strip().lower() == handle.strip().lower():
-                return os.path.join(dirpath, dirname)
+                match = os.path.join(dirpath, dirname)
+                print(f"✅ Found TIFF folder: {match}")
+                return match
+    print("❌ No matching TIFF folder found")
     return None
 
 def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
@@ -52,6 +57,10 @@ def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
                         "page_h": ph
                     }
 
+    if best:
+        print(f"✅ Selected layout: {best}")
+    else:
+        print("❌ No viable layout found")
     return best if best else {"fit": False, "reason": "scale or margin out of bounds"}
 
 def draw_grid(handle, layout, output_dir, pages):
@@ -86,33 +95,46 @@ def draw_grid(handle, layout, output_dir, pages):
             page_img = Image.open(tiff_path).convert("RGB")
             page_img = page_img.resize((pw, ph), Image.LANCZOS)
             img.paste(page_img, (x, y))
-        except:
+        except Exception as e:
+            print(f"⚠️ Missing or unreadable page: {tiff_name} — {e}")
             blank = Image.new("RGB", (pw, ph), "white")
             img.paste(blank, (x, y))
 
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, f"{handle}_grid.png")
     img.save(out_path)
+    print(f"✅ Saved grid image: {out_path}")
     return out_path
 
 def generate_png_grid(handle, wall_w, wall_h):
-    with open(CSV_PATH, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row["Handle"].strip() == handle.strip():
-                try:
-                    pages = int(row["Pages"])
-                    page_w = float(row["Page Width (cm)"])
-                    page_h = float(row["Page Height (cm)"])
-                except:
-                    return None
+    print(f"\n📄 Reading CSV: {CSV_PATH}")
+    print(f"📐 Wall dimensions: {wall_w} x {wall_h} cm")
+    try:
+        with open(CSV_PATH, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                csv_handle = row["Handle"].strip()
+                print(f"🔍 Comparing: {csv_handle}  vs  {handle.strip()}")
+                if csv_handle == handle.strip():
+                    try:
+                        pages = int(row["Pages"])
+                        page_w = float(row["Page Width (cm)"])
+                        page_h = float(row["Page Height (cm)"])
+                    except Exception as e:
+                        print(f"❌ Invalid page data: {e}")
+                        return None
 
-                layout = select_best_layout(wall_w, wall_h, page_w, page_h, pages)
-                if not layout.get("fit"):
-                    return None
+                    layout = select_best_layout(wall_w, wall_h, page_w, page_h, pages)
+                    if not layout.get("fit"):
+                        print(f"❌ Layout rejected: {layout.get('reason')}")
+                        return None
 
-                output_dir = os.path.join(STATIC_ROOT, f"{int(wall_w)}x{int(wall_h)}")
-                os.makedirs(output_dir, exist_ok=True)
-                return draw_grid(handle, layout, output_dir, pages)
+                    output_dir = os.path.join(STATIC_ROOT, f"{int(wall_w)}x{int(wall_h)}")
+                    os.makedirs(output_dir, exist_ok=True)
+                    return draw_grid(handle, layout, output_dir, pages)
+    except Exception as e:
+        print(f"❌ Failed to read CSV: {e}")
+        return None
 
+    print("❌ Handle not found in CSV")
     return None
