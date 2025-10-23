@@ -29,7 +29,7 @@ def accurate_grid():
 @app.route("/api/test-csv", methods=["GET"])
 def test_csv():
     try:
-        with open("csv/mural_master.csv", encoding="utf-8") as f:
+        with open("mural_master.csv", encoding="utf-8") as f:
             first_line = f.readline().strip()
         return jsonify({"status": "success", "first_line": first_line})
     except Exception as e:
