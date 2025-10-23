@@ -1,7 +1,8 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from eligible_texts import get_eligible_texts
+from generate_png_grid import generate_png_grid  # ✅ NEW: import accurate grid generator
 
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
@@ -26,8 +27,8 @@ def get_murals():
         print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
         eligible = get_eligible_texts(wall_width, wall_height)
-
         deduped = list({str(item): item for item in eligible}.values())
+
         print(f"🧾 Eligible mural count: {len(deduped)}")
         for i, mural in enumerate(deduped):
             print(f"{i+1}. {mural}", flush=True)
@@ -36,6 +37,34 @@ def get_murals():
     except Exception as e:
         print(f"❌ Error in /api/murals: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
+
+# ✅ NEW: accurate-grid route
+@app.route("/api/accurate-grid", methods=["POST"])
+def accurate_grid():
+    try:
+        data = request.get_json()
+        handle = data.get("handle")
+        wall_w = float(data.get("wall_width", 0))
+        wall_h = float(data.get("wall_height", 0))
+
+        print(f"📦 Received accurate-grid request for: {handle} at {wall_w} x {wall_h}", flush=True)
+
+        result = generate_png_grid(handle, wall_w, wall_h)
+
+        if result:
+            print(f"✅ Returning grid preview: {result}", flush=True)
+            return jsonify({"grid_url": result})
+        else:
+            print("❌ Grid generation failed", flush=True)
+            return jsonify({"error": "Grid generation failed"}), 400
+    except Exception as e:
+        print(f"❌ Exception in /api/accurate-grid: {e}", flush=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+# ✅ Optional: serve static previews directly
+@app.route("/static/previews/<path:filename>")
+def serve_preview(filename):
+    return send_from_directory("static/previews", filename)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
