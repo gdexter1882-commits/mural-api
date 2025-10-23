@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from generate_png_grid import generate_png_grid
 import os
 import csv
 
 app = Flask(__name__, static_folder="static")
+CORS(app)
 
 @app.route("/api/accurate-grid", methods=["POST"])
 def accurate_grid():
