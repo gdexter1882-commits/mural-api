@@ -1,56 +1,43 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from generate_png_grid import generate_png_grid
 import os
-import csv
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from eligible_texts import get_eligible_texts
+
+os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
+os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
 app = Flask(__name__, static_folder="static")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-@app.route("/api/accurate-grid", methods=["POST"])
-def accurate_grid():
-    try:
-        data = request.get_json(force=True)
-        handle = data.get("handle")
-        wall_w = data.get("wall_width")
-        wall_h = data.get("wall_height")
+@app.route("/")
+def index():
+    return "Mural API is running", 200
 
-        if not all([handle, wall_w, wall_h]):
-            return jsonify({"error": "Missing required fields"}), 400
+@app.route("/health")
+def health():
+    return "OK", 200
 
-        grid_path = generate_png_grid(handle, wall_w, wall_h)
-        if not grid_path:
-            return jsonify({"error": "Grid generation failed"}), 500
-
-        filename = os.path.basename(grid_path)
-        grid_url = f"/static/previews/{filename}"
-        return jsonify({"grid_url": grid_url})
-
-    except Exception as e:
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
-
-@app.route("/api/test-csv", methods=["GET"])
-def test_csv():
-    try:
-        with open("mural_master.csv", encoding="utf-8") as f:
-            first_line = f.readline().strip()
-        return jsonify({"status": "success", "first_line": first_line})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route("/api/murals", methods=["GET"])
+@app.route("/api/murals", methods=["POST"])
 def get_murals():
     try:
-        with open("mural_master.csv", newline='', encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            murals = [row for row in reader]
-        return jsonify({"murals": murals})
-    except Exception as e:
-        return jsonify({"error": "Failed to load murals", "details": str(e)}), 500
+        data = request.get_json()
+        wall_width = float(data.get("wall_width", 0))
+        wall_height = float(data.get("wall_height", 0))
+        print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
-@app.route("/static/previews/<path:filename>")
-def serve_preview(filename):
-    return send_from_directory("static/previews", filename)
+        eligible = get_eligible_texts(wall_width, wall_height)
+
+        deduped = list({str(item): item for item in eligible}.values())
+        print(f"🧾 Eligible mural count: {len(deduped)}")
+        for i, mural in enumerate(deduped):
+            print(f"{i+1}. {mural}", flush=True)
+
+        return jsonify({"eligible": deduped})
+    except Exception as e:
+        print(f"❌ Error in /api/murals: {e}", flush=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"🚀 Starting Flask on 0.0.0.0:{port}", flush=True)
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
