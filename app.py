@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from generate_png_grid import generate_png_grid
 import os
+import csv
 
 app = Flask(__name__, static_folder="static")
 
@@ -34,6 +35,16 @@ def test_csv():
         return jsonify({"status": "success", "first_line": first_line})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/murals", methods=["GET"])
+def get_murals():
+    try:
+        with open("mural_master.csv", newline='', encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            murals = [row for row in reader]
+        return jsonify({"murals": murals})
+    except Exception as e:
+        return jsonify({"error": "Failed to load murals", "details": str(e)}), 500
 
 @app.route("/static/previews/<path:filename>")
 def serve_preview(filename):
