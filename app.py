@@ -2,10 +2,8 @@ import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from eligible_texts import get_eligible_texts
-from generate_png_grid import generate_png_grid
+from generate_png_grid import generate_png_grid  # ✅ NEW: import accurate grid generator
 
-# Set resolution root for grid generation
-os.environ["TIFF_ROOT"] = "MediumResFacsimiles"
 os.environ["FLASK_RUN_HOST"] = "0.0.0.0"
 os.environ["FLASK_RUN_PORT"] = os.environ.get("PORT", "5000")
 
@@ -40,6 +38,7 @@ def get_murals():
         print(f"❌ Error in /api/murals: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
 
+# ✅ NEW: accurate-grid route
 @app.route("/api/accurate-grid", methods=["POST"])
 def accurate_grid():
     try:
@@ -62,13 +61,10 @@ def accurate_grid():
         print(f"❌ Exception in /api/accurate-grid: {e}", flush=True)
         return jsonify({"error": "Internal server error"}), 500
 
+# ✅ Optional: serve static previews directly
 @app.route("/static/previews/<path:filename>")
 def serve_preview(filename):
     return send_from_directory("static/previews", filename)
-
-@app.route("/static/converted_images/<path:filename>")
-def serve_converted_image(filename):
-    return send_from_directory("static/converted_images", filename)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

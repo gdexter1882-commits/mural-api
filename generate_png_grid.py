@@ -4,7 +4,7 @@ from PIL import Image
 
 CSV_PATH = "mural_master.csv"
 STATIC_ROOT = "static/previews"
-TIFF_ROOT = "MediumResFacsimiles"
+TIFF_ROOT = "LowResFacsimiles"
 
 def find_tiff_folder(root, handle):
     print(f"📁 Searching for TIFF folder matching: {handle}")
