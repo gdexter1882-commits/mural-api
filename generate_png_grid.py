@@ -2,11 +2,9 @@ import os
 import csv
 from PIL import Image
 
-# Deployment-safe paths
-BASE_DIR = os.path.dirname(__file__)
-CSV_PATH = os.path.join(BASE_DIR, "mural_master.csv")
-TIFF_ROOT = os.path.join(BASE_DIR, "LowResFacsimiles")
-STATIC_ROOT = os.path.join(BASE_DIR, "static", "previews")
+CSV_PATH = "mural_master.csv"
+STATIC_ROOT = "static/previews"
+TIFF_ROOT = "LowResFacsimiles"
 
 def find_tiff_folder(root, handle):
     for dirpath, dirnames, _ in os.walk(root):
@@ -20,13 +18,13 @@ def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
     best = None
     best_score = float("inf")
 
-    for scale in range(95, 106):  # 95% to 105%
+    for scale in range(95, 106):
         pw = page_w * scale / 100
         ph = page_h * scale / 100
 
         for cols in range(1, pages + 1):
             rows = (pages + cols - 1) // cols
-            for gap in range(1, 6):  # 1–5 cm
+            for gap in range(1, 6):
                 grid_w = cols * pw
                 grid_h = rows * ph + (rows - 1) * gap
 
@@ -58,7 +56,7 @@ def select_best_layout(wall_w, wall_h, page_w, page_h, pages):
 
 def draw_grid(handle, layout, output_dir, pages):
     cols, rows = map(int, layout["grid"].split("x"))
-    pw = int(layout["page_w"] * 10)  # cm → pixels
+    pw = int(layout["page_w"] * 10)
     ph = int(layout["page_h"] * 10)
     margin_x = int(layout["margin_x"] * 10)
     margin_y = int(layout["margin_y"] * 10)
@@ -70,10 +68,8 @@ def draw_grid(handle, layout, output_dir, pages):
     canvas_h = grid_h + 2 * margin_y
 
     img = Image.new("RGB", (canvas_w, canvas_h), "white")
-
     tiff_dir = find_tiff_folder(TIFF_ROOT, handle)
     if not tiff_dir:
-        print(f"❌ TIFF folder not found for: {handle}")
         return None
 
     for idx in range(pages):
@@ -97,14 +93,13 @@ def draw_grid(handle, layout, output_dir, pages):
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, f"{handle}_grid.png")
     img.save(out_path)
-    print(f"✅ Saved: {out_path}")
     return out_path
 
 def generate_png_grid(handle, wall_w, wall_h):
     with open(CSV_PATH, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            if row["Handle"].strip().lower() == handle.strip().lower():
+            if row["Handle"].strip() == handle.strip():
                 try:
                     pages = int(row["Pages"])
                     page_w = float(row["Page Width (cm)"])
@@ -113,10 +108,11 @@ def generate_png_grid(handle, wall_w, wall_h):
                     return None
 
                 layout = select_best_layout(wall_w, wall_h, page_w, page_h, pages)
-                if layout.get("fit"):
-                    return draw_grid(handle, layout, STATIC_ROOT, pages)
-                else:
-                    print(f"❌ Layout failed: {layout['reason']}")
+                if not layout.get("fit"):
                     return None
-    print(f"❌ Handle not found in CSV: {handle}")
+
+                output_dir = os.path.join(STATIC_ROOT, f"{int(wall_w)}x{int(wall_h)}")
+                os.makedirs(output_dir, exist_ok=True)
+                return draw_grid(handle, layout, output_dir, pages)
+
     return None
