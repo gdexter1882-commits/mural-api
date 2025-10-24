@@ -24,11 +24,13 @@ def get_murals():
         print(f"📐 Received dimensions: {wall_width} x {wall_height}", flush=True)
 
         eligible = get_eligible_texts(wall_width, wall_height)
-        deduped = list({str(item): item for item in eligible}.values())
+
+        # ✅ Deduplicate by handle
+        deduped = list({item["handle"]: item for item in eligible}.values())
 
         print(f"🧾 Eligible mural count: {len(deduped)}")
         for i, mural in enumerate(deduped):
-            print(f"{i+1}. {mural}", flush=True)
+            print(f"{i+1}. {mural['handle']}", flush=True)
 
         return jsonify({"eligible": deduped})
     except Exception as e:
