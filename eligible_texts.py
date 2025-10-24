@@ -54,6 +54,7 @@ def get_eligible_texts(wall_width, wall_height):
                     layout = try_layout(wall_width, wall_height, width_cm, height_cm, pages)
                     if layout.get("eligible"):
                         thumbnail_url = f"{base_url}/{handle}.jpg"
+                        print(f"🔗 {handle} → {cdn_url}", flush=True)  # ✅ Debug output
                         eligible.append({
                             "title": title,
                             "handle": handle,
@@ -63,7 +64,7 @@ def get_eligible_texts(wall_width, wall_height):
                             "thumbnail": thumbnail_url,
                             "pages": pages,
                             "aspect_ratio": aspect_ratio,
-                            "cdn_url": cdn_url  # ✅ Injected from Shopify CSV
+                            "cdn_url": cdn_url
                         })
                 except Exception as e:
                     print(f"⚠️ Skipping row due to error: {e}", flush=True)
