@@ -25,7 +25,8 @@ def get_eligible_texts(wall_width, wall_height):
         with open(shopify_csv_path, newline="", encoding="utf-8") as shopify_file:
             shopify_reader = csv.DictReader(shopify_file)
             for row in shopify_reader:
-                handle = str(row.get("Handle", "")).strip()
+                raw_handle = str(row.get("Handle", "")).strip()
+                handle = raw_handle.lower()
                 cdn_url = str(row.get("Image src", "")).strip()
                 if handle:
                     cdn_lookup[handle] = cdn_url
@@ -39,7 +40,8 @@ def get_eligible_texts(wall_width, wall_height):
             reader = csv.DictReader(csvfile)
             for row in reader:
                 try:
-                    handle = str(row.get("Handle", "")).strip()
+                    raw_handle = str(row.get("Handle", "")).strip()
+                    handle = raw_handle.lower()
                     title = str(row.get("Title", "")).strip()
                     pages = int(row.get("Pages", 0))
                     width_cm = float(row.get("Page Width (cm)", 0))
@@ -53,12 +55,15 @@ def get_eligible_texts(wall_width, wall_height):
 
                     layout = try_layout(wall_width, wall_height, width_cm, height_cm, pages)
                     if layout.get("eligible"):
-                        thumbnail_url = f"{base_url}/{handle}.jpg"
-                        print(f"🔗 {handle} → {cdn_url}", flush=True)  # ✅ Debug output
+                        thumbnail_url = f"{base_url}/{raw_handle}.jpg"
+                        if not cdn_url:
+                            print(f"⚠️ No CDN match for: {raw_handle}", flush=True)
+                        else:
+                            print(f"✅ Matched CDN for: {raw_handle} → {cdn_url}", flush=True)
                         eligible.append({
                             "title": title,
-                            "handle": handle,
-                            "slug": slugify(handle),
+                            "handle": raw_handle,
+                            "slug": slugify(raw_handle),
                             "grid": layout.get("grid"),
                             "scale": layout.get("scale_pct"),
                             "thumbnail": thumbnail_url,
